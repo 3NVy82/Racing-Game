@@ -245,5 +245,5 @@ class Game {
   }
 }
 
-export default
+export default Game
 
