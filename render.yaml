@@ -5,13 +5,16 @@ services:
     plan: free
     region: frankfurt
     buildCommand: |
-      echo "🚀 Начинаем сборку..."
+      echo "🚀 Installing dependencies..."
       npm install
+      echo "🔄 Generating Prisma client..."
       npx prisma generate
+      echo "🔄 Running migrations..."
       npx prisma migrate deploy || npx prisma db push --accept-data-loss
-      echo "✅ Сборка завершена!"
+      echo "✅ Build complete!"
     startCommand: npm start
     healthCheckPath: /api/stats
+    healthCheckTimeout: 5
     envVars:
       - key: NODE_VERSION
         value: 22.20.0
@@ -26,13 +29,12 @@ services:
           name: racing-game-db
           property: connectionString
 
-  - type: database
+  - type: postgresql
     name: racing-game-db
     plan: free
     region: frankfurt
     databaseName: racing_game
     user: racing_user
-    engine: postgres
     ipAllowList:
       - source: 0.0.0.0/0
         description: "Allow all connections (for Render internal access)"
