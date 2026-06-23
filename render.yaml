@@ -13,6 +13,8 @@ services:
       npx prisma db push --accept-data-loss
       echo "✅ Сборка завершена!"
     startCommand: |
+      echo "🚀 Проверка Prisma Client..."
+      npx prisma generate
       echo "🚀 Запуск сервера..."
       npm start
     healthCheckPath: /api/stats
