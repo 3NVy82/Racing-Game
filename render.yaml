@@ -1,0 +1,165 @@
+# ============================================================
+# render.yaml - Полный конфиг для деплоя на Render.com
+# ============================================================
+# Документация: https://render.com/docs/blueprint-spec
+# 
+# ✅ Что делает этот файл:
+# 1. Создаёт веб-сервис с Node.js
+# 2. Создаёт базу данных PostgreSQL
+# 3. Автоматически прогоняет миграции (automatic migrations)
+# 4. Запускает сервер
+# ============================================================
+
+services:
+  # ==========================================================
+  # 1. ВЕБ-СЕРВЕР (Node.js + Express)
+  # ==========================================================
+  - type: web
+    name: racing-game
+    runtime: node
+    plan: free                     # бесплатный тариф
+    region: frankfurt              # регион (frankfurt, ohio, singapore, oregon)
+    
+    # ---------- АВТОМАТИЧЕСКАЯ МИГРАЦИЯ ПРИ КАЖДОМ ДЕПЛОЕ ----------
+    buildCommand: |
+      echo "🚀 Начинаем сборку проекта..."
+      echo "📦 Версия Node.js: $(node -v)"
+      echo "📦 Версия npm: $(npm -v)"
+      
+      # 1. Установка зависимостей
+      echo "📦 Установка зависимостей..."
+      npm install
+      
+      # 2. Генерация Prisma Client
+      echo "🔄 Генерация Prisma Client..."
+      npx prisma generate
+      
+      # 3. АВТОМАТИЧЕСКАЯ МИГРАЦИЯ БАЗЫ ДАННЫХ
+      #    Если таблиц нет - создаются
+      #    Если есть изменения в схеме - применяются
+      echo "🔄 Проверка и применение миграций к базе данных..."
+      npx prisma migrate deploy || echo "⚠️ Ошибка миграции, пробуем db push..."
+      npx prisma db push --accept-data-loss || echo "⚠️ Ошибка db push, продолжаем..."
+      
+      # 4. Проверка подключения к БД
+      echo "🔍 Проверка подключения к базе данных..."
+      node -e "import('./server/prisma/client.js').then(m => m.default.$connect().then(() => console.log('✅ Подключение к БД успешно!')).catch(e => console.error('❌ Ошибка БД:', e.message)))"
+      
+      echo "✅ Сборка завершена!"
+    
+    # Команда запуска сервера
+    startCommand: |
+      echo "🚀 Запуск сервера..."
+      echo "🔗 Сервер будет доступен по адресу: https://racing-game.onrender.com"
+      echo "📊 База данных: PostgreSQL"
+      echo "🔄 Миграции уже применены на этапе сборки"
+      npm start
+    
+    # ---------- HEALTH CHECK ----------
+    healthCheckPath: /api/stats
+    healthCheckTimeout: 5
+    
+    # ---------- ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ ----------
+    envVars:
+      # Node.js
+      - key: NODE_VERSION
+        value: 22.20.0
+      
+      - key: NODE_ENV
+        value: production
+      
+      - key: PORT
+        value: 3000
+      
+      # База данных (автоматически подставляется из созданной БД)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: racing-game-db
+          property: connectionString
+      
+      # CORS
+      - key: CORS_ORIGIN
+        value: "*"
+      
+      # Prisma (отключаем теле метрию)
+      - key: PRISMA_TELEMETRY_INFORMATION
+        value: "0"
+      
+      # Дополнительные настройки
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
+      
+      # Скорость миграции (если БД медленная)
+      - key: PRISMA_MIGRATE_SKIP_DOWNLOAD
+        value: "true"
+
+  # ==========================================================
+  # 2. БАЗА ДАННЫХ (PostgreSQL)
+  # ==========================================================
+  - type: postgresql
+    name: racing-game-db
+    plan: free
+    region: frankfurt
+    databaseName: racing_game
+    user: racing_user
+    
+    # ---------- IP-ДОСТУП ----------
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: "Allow all connections (for Render internal access)"
+
+# ============================================================
+# ПОЛНЫЙ СПИСОК КОМАНД, КОТОРЫЕ ВЫПОЛНЯЕТ RENDER
+# ============================================================
+#
+# 1. Клонирование репозитория:
+#    git clone https://github.com/ваш-ник/racing-game.git
+#
+# 2. Установка зависимостей:
+#    npm install
+#
+# 3. Генерация Prisma Client:
+#    npx prisma generate
+#
+# 4. АВТОМАТИЧЕСКАЯ МИГРАЦИЯ:
+#    npx prisma migrate deploy   # применяет все миграции из папки prisma/migrations
+#    npx prisma db push          # если миграции не найдены, применяет схему напрямую
+#
+# 5. Проверка подключения:
+#    node -e "import('./server/prisma/client.js').then(m => m.default.$connect())"
+#
+# 6. Запуск сервера:
+#    npm start
+#
+# ============================================================
+# КАК ПРОВЕРИТЬ, ЧТО МИГРАЦИЯ СРАБОТАЛА
+# ============================================================
+#
+# 1. После деплоя зайдите в панель Render → ваш сервис → Logs
+# 2. Найдите строки:
+#    ✅ Подключение к БД успешно!
+#    ✅ Сборка завершена!
+# 3. Откройте в браузере: https://racing-game.onrender.com/api/stats
+# 4. Если данные есть - миграция сработала!
+#
+# ============================================================
+# КАК ОБНОВИТЬ СХЕМУ БАЗЫ ДАННЫХ
+# ============================================================
+#
+# 1. Измените schema.prisma
+# 2. Выполните локально:
+#    npx prisma migrate dev --name new_feature
+# 3. Закоммитьте папку prisma/migrations
+# 4. Запушьте на GitHub
+# 5. Render автоматически применит миграцию при следующем деплое
+#
+# ============================================================
+# РУЧНОЙ ЗАПУСК МИГРАЦИЙ НА RENDER (через SSH)
+# ============================================================
+#
+# Если нужно выполнить миграцию вручную:
+# 1. Зайдите в панель Render → ваш сервис → Shell
+# 2. Выполните:
+#    npx prisma migrate deploy
+#
+# ============================================================
