@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Racing Game 3D</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="menu">
+        <h1>🏎️ Racing Game 3D</h1>
+        <div id="lobbyControls">
+            <input type="text" id="playerName" placeholder="Ваше имя" value="Игрок1">
+            <button id="createLobbyBtn">Создать лобби</button>
+            <div style="margin-top: 10px;">
+                <input type="text" id="lobbyIdInput" placeholder="ID лобби">
+                <button id="joinLobbyBtn">Подключиться</button>
+            </div>
+        </div>
+        <div id="lobbyInfo"></div>
+    </div>
+    
+    <div id="gameContainer" style="display:none;">
+        <canvas id="gameCanvas" style="width:100%; height:100%; display:block;"></canvas>
+        <div id="ui">
+            <div id="hud">
+                <div id="speed">Скорость: 0</div>
+                <div id="distance">Дистанция: 0м</div>
+                <div id="score">Очки: 0</div>
+                <div id="position">Место: 1</div>
+            </div>
+            <div id="chat">
+                <div id="chatMessages"></div>
+                <input type="text" id="chatInput" placeholder="Сообщение...">
+            </div>
+        </div>
+        <div id="gameOver" style="display:none;">
+            <h2 id="winnerText">Игра окончена!</h2>
+            <div id="results"></div>
+            <button id="backToMenu()">В меню</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="module" src="client.js"></script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+generator client {
+  provider        = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+model GameSession {
+  id            String        @id @default(cuid())
+  lobbyId       String        @unique
+  status        SessionStatus @default(WAITING)
+  players       Player[]
+  chatMessages  ChatMessage[]
+  trafficCars   TrafficCar[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  endedAt       DateTime?
+  winnerId      String?
+  winner        Player?       @relation("WinnerSession", fields: [winnerId], references: [id])
+  totalDistance Float         @default(0)
+  maxScore      Int           @default(0)
+  duration      Int?
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("game_sessions")
+}
+
+model Player {
+  id                 String        @id @default(cuid())
+  name               String
+  socketId           String?       @unique
+  score              Int           @default(0)
+  distance           Float         @default(0)
+  maxSpeed           Float         @default(0)
+  dangerousManeuvers Int           @default(0)
+  collisions         Int           @default(0)
+  finished           Boolean       @default(false)
+  joinTime           DateTime      @default(now())
+  leaveTime          DateTime?
+  gameSessionId      String
+  gameSession        GameSession   @relation(fields: [gameSessionId], references: [id])
+  wonSessions        GameSession[] @relation("WinnerSession")
+  totalPlayTime      Int?          @default(0)
+  gamesPlayed        Int           @default(0)
+  gamesWon           Int           @default(0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  chatMessages       ChatMessage[]
+
+  @@index([gameSessionId])
+  @@index([name])
+  @@map("players")
+}
+
+model TrafficCar {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   GameSession @relation(fields: [sessionId], references: [id])
+  positionX Float
+  positionZ Float
+  speed     Float
+  width     Float
+  height    Float
+  color     String      @default("#FF4444")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([sessionId])
+  @@map("traffic_cars")
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   GameSession @relation(fields: [sessionId], references: [id])
+  playerId  String
+  player    Player      @relation(fields: [playerId], references: [id])
+  message   String      @db.Text
+  timestamp DateTime    @default(now())
+
+  @@index([sessionId])
+  @@index([timestamp])
+  @@map("chat_messages")
+}
+
+model GameStats {
+  id              String   @id @default(cuid())
+  date            DateTime @default(now())
+  totalSessions   Int      @default(0)
+  activePlayers   Int      @default(0)
+  averageDuration Float    @default(0)
+  maxDistance     Float    @default(0)
+
+  @@unique([date])
+  @@map("game_stats")
+}
+
+enum SessionStatus {
+  WAITING
+  PLAYING
+  ENDED
+}
