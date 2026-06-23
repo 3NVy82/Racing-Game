@@ -5,16 +5,16 @@ services:
     plan: free
     region: frankfurt
     buildCommand: |
+      echo "🚀 Очистка старого кеша..."
+      rm -rf node_modules package-lock.json server/node_modules
       echo "📦 Установка зависимостей..."
       npm install
       echo "🔄 Генерация Prisma Client..."
-      npx prisma generate
+      npx prisma generate --schema=./schema.prisma
       echo "🔄 Применение схемы БД..."
-      npx prisma db push --accept-data-loss
+      npx prisma db push --accept-data-loss --schema=./schema.prisma
       echo "✅ Сборка завершена!"
     startCommand: |
-      echo "🚀 Проверка Prisma Client..."
-      npx prisma generate
       echo "🚀 Запуск сервера..."
       npm start
     healthCheckPath: /api/stats
@@ -40,4 +40,4 @@ databases:
     user: racing_user
     ipAllowList:
       - source: 0.0.0.0/0
-        description: "Allow all connections (for Render internal access)"
+        description: "Allow all"
