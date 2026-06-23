@@ -5,16 +5,11 @@ services:
     plan: free
     region: frankfurt
     buildCommand: |
-      echo "🚀 Installing dependencies..."
       npm install
-      echo "🔄 Generating Prisma client..."
       npx prisma generate
-      echo "🔄 Running migrations..."
       npx prisma migrate deploy || npx prisma db push --accept-data-loss
-      echo "✅ Build complete!"
     startCommand: npm start
     healthCheckPath: /api/stats
-    healthCheckTimeout: 5
     envVars:
       - key: NODE_VERSION
         value: 22.20.0
@@ -29,8 +24,9 @@ services:
           name: racing-game-db
           property: connectionString
 
-  - type: postgresql
-    name: racing-game-db
+# 👇 БАЗА ДАННЫХ ОПРЕДЕЛЯЕТСЯ ОТДЕЛЬНО, НА ТОМ ЖЕ УРОВНЕ, ЧТО И SERVICES
+databases:
+  - name: racing-game-db
     plan: free
     region: frankfurt
     databaseName: racing_game
